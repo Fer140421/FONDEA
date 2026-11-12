@@ -30,10 +30,12 @@ async function main() {
     assert.equal(root.network_passphrase, stellar.networkPassphrase);
   });
 
-  const loginClient = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY, {
+  const createPublicClient = () => createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     global: { fetch: (input, options) => fetch(input, { ...options, signal: AbortSignal.timeout(10_000) }) },
   });
+  const loginClient = createPublicClient();
+  const anonymous = createPublicClient();
   let token = process.env.INTEGRATION_ACCESS_TOKEN?.trim();
   let user: AuthenticatedUser | null = null;
   let signedIn = false;
@@ -85,10 +87,6 @@ async function main() {
           .select('id,message').eq('id', 1).single();
         assert.equal(error, null);
         assert.deepEqual(data, { id: 1, message: 'fondea-backend-ready' });
-        const anonymous = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY, {
-          auth: { persistSession: false, autoRefreshToken: false },
-          global: { fetch: (input, options) => fetch(input, { ...options, signal: AbortSignal.timeout(10_000) }) },
-        });
         const denied = await anonymous.from('backend_connection_checks').select('id');
         assert(denied.error, 'La tabla técnica debe rechazar consultas anónimas.');
       });
@@ -106,10 +104,6 @@ async function main() {
           assert.equal(download.error, null);
           assert.equal(await download.data!.text(), content);
 
-          const anonymous = createClient(config.SUPABASE_URL, config.SUPABASE_PUBLISHABLE_KEY, {
-            auth: { persistSession: false, autoRefreshToken: false },
-            global: { fetch: (input, options) => fetch(input, { ...options, signal: AbortSignal.timeout(10_000) }) },
-          });
           const anonymousDownload = await anonymous.storage.from(config.SUPABASE_STORAGE_BUCKET).download(path);
           assert(anonymousDownload.error, 'El archivo privado no debe ser accesible anónimamente.');
 

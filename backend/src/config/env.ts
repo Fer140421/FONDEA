@@ -9,7 +9,11 @@ const httpUrl = z.url().refine((value) => {
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
-  SUPABASE_URL: httpUrl.transform((value) => value.replace(/\/$/, '')),
+  SUPABASE_URL: httpUrl.refine((value) => {
+    if (!URL.canParse(value)) return false;
+    const url = new URL(value);
+    return url.pathname === '/' && !url.search && !url.hash;
+  }).transform((value) => value.replace(/\/$/, '')),
   SUPABASE_PUBLISHABLE_KEY: z.string().startsWith('sb_publishable_').refine(
     (value) => value.length > 20 && !value.includes('replace'),
   ),

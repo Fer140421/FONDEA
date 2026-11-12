@@ -20,7 +20,7 @@ Validaciones ejecutadas durante la implementación:
 
 - `npm run typecheck`: aprobado.
 - `npm run build`: aprobado.
-- `npm test`: 14 pruebas aprobadas.
+- `npm test`: 15 pruebas aprobadas, incluida la regresión para JWT malformados que deben recibir 401 sin consultar al proveedor.
 - Servidor compilado: `/health` devuelve 200 y `/api/v1/me` sin token devuelve 401.
 - Consulta real a Horizon: passphrase de testnet confirmada.
 

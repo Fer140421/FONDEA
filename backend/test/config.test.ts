@@ -28,6 +28,9 @@ test('falla al arrancar con configuración ausente, administrativa o mainnet', (
     { ...environment, SUPABASE_URL: 'https://username:password@example.supabase.co' },
     { ...environment, ALLOWED_ORIGINS: '*' },
     { ...environment, SUPABASE_URL: 'not-a-url' },
+    { ...environment, SUPABASE_URL: 'https://example.supabase.co/?query=value' },
+    { ...environment, SUPABASE_URL: 'https://example.supabase.co/#fragment' },
+    { ...environment, SUPABASE_URL: 'https://example.supabase.co/path' },
   ]) assert.throws(() => loadConfig(invalid), /Configuración inválida/);
 });
 

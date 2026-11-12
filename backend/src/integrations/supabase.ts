@@ -38,9 +38,28 @@ export function createSupabaseIntegration(
     exp: z.number().int(),
     nbf: z.number().optional(),
   });
+  const tokenSchema = z.object({
+    header: z.object({
+      alg: z.enum(['ES256', 'RS256', 'HS256']),
+      kid: z.string().optional(),
+    }),
+    claims: claimsSchema,
+  });
 
   return {
     async verifyToken(token) {
+      // Solo comprobar la estructura aquí; la identidad exige la firma verificada por el SDK.
+      try {
+        const parts = token.split('.');
+        if (parts.length !== 3 || !parts.every((part) => /^[A-Za-z0-9_-]+$/.test(part))) return null;
+        const parsed = tokenSchema.safeParse({
+          header: JSON.parse(Buffer.from(parts[0]!, 'base64url').toString('utf8')),
+          claims: JSON.parse(Buffer.from(parts[1]!, 'base64url').toString('utf8')),
+        });
+        if (!parsed.success) return null;
+      } catch {
+        return null;
+      }
       try {
         // Verifica firma y caducidad con las claves del proyecto; no basta decodificar.
         const { data, error } = await authClient.auth.getClaims(token);

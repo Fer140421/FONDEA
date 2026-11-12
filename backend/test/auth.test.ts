@@ -54,6 +54,25 @@ test('rechaza firma falsa aunque el JWT contenga datos aparentemente válidos', 
   assert.equal(response.headers['www-authenticate'], 'Bearer error="invalid_token"');
 });
 
+test('JWT con JSON o tipos malformados reciben 401 sin contactar al proveedor', async () => {
+  const context = fixture();
+  const app = createApp(context.config, context);
+  const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
+  const payload = context.token().split('.')[1]!;
+  for (const token of [
+    'ew.eyJleHAiOjQwMDAwMDAwMDB9.c2ln',
+    'eyJhbGciOjEyM30.eyJleHAiOjQwMDAwMDAwMDB9.c2ln',
+    `${encode({ alg: 123 })}.${payload}.c2ln`,
+    `${encode({ alg: 'none' })}.${payload}.c2ln`,
+    `${encode({ alg: 'ES256', kid: 123 })}.${payload}.c2ln`,
+    `${encode({ alg: 'ES256' })}.${encode(null)}.c2ln`,
+  ]) {
+    const response = await request(app).get('/api/v1/me').auth(token, { type: 'bearer' });
+    assert.equal(response.status, 401);
+  }
+  assert.equal(context.calls.length, 0);
+});
+
 test('rechaza un JWT caducado con firma válida', async () => {
   const context = fixture();
   const response = await request(createApp(context.config, context))
