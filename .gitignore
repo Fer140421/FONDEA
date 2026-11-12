@@ -1,0 +1,54 @@
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+!.env.development.example
+!.env.production.example
+*.env
+*.secret
+.envrc
+config/env/*.json
+!config/env/*.example.json
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+/build/
+/coverage/
+/android/local.properties
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/flutter_export_environment.sh
+/ios/Runner/GeneratedPluginRegistrant.*
+/linux/flutter/ephemeral/
+/macos/Flutter/GeneratedPluginRegistrant.swift
+/macos/Flutter/ephemeral/
+/windows/flutter/ephemeral/
+
+# Node.js backend
+/backend/node_modules/
+/backend/dist/
+/backend/coverage/
+/backend/.env
+/backend/.env.*
+!/backend/.env.example
+!/backend/.env.development.example
+!/backend/.env.production.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Signing material and private certificates
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+/android/key.properties
