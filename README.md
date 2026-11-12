@@ -1,14 +1,14 @@
 # Fondea
 
-Aplicación móvil de Fondea, construida con Flutter. Este repositorio contiene el punto de partida del cliente móvil, la configuración por entorno y la documentación de producto y arquitectura. El backend está reservado para el futuro servicio Node.js y la integración de servidor con Supabase.
+Aplicación móvil de Fondea, construida con Flutter. Este repositorio contiene el punto de partida del cliente móvil, un backend Node.js con TypeScript, la configuración por entorno y la documentación de producto y arquitectura.
 
-> **Estado:** scaffold inicial. La pantalla actual es de bienvenida; todavía no hay flujos de negocio, API ni backend implementados.
+> **Estado:** base inicial. La pantalla Flutter es de bienvenida. El backend incluye `/health`, autenticación Supabase y `/api/v1/me`; los flujos y endpoints de negocio están pendientes.
 
 ## Contenido
 
 - `lib/`: aplicación Flutter y lectura de configuración de compilación.
 - `config/env/`: plantillas de configuración para desarrollo y producción.
-- `backend/`: documentación y plantilla de variables del futuro servicio.
+- `backend/`: servicio Express/TypeScript, integración Supabase y Stellar testnet, pruebas y SQL técnico. Consulta su [guía de inicio](backend/README.md).
 - `docs/sdd/`: proceso y plantillas de Specification-Driven Development.
 - `pubspec.yaml`: dependencias y configuración del paquete Flutter.
 
@@ -17,7 +17,7 @@ Aplicación móvil de Fondea, construida con Flutter. Este repositorio contiene 
 - Git.
 - Flutter estable con Dart compatible con `pubspec.yaml` (`>=3.3.0 <4.0.0`).
 - Para ejecutar el proyecto, un destino configurado: emulador/dispositivo Android o iOS, o un destino de escritorio/web soportado por tu instalación de Flutter.
-- Node.js LTS solo cuando se implemente el backend (actualmente no hay servidor ni dependencias Node).
+- Node.js 24 o superior y npm para ejecutar el backend.
 
 Comprueba la instalación con:
 
@@ -65,6 +65,8 @@ flutter doctor
 Si Flutter informa que no hay un destino o plataforma configurada, consulta `flutter devices` y habilita/crea el destino correspondiente con las herramientas oficiales de Flutter antes de ejecutar la app.
 
 ## Configuración y secretos
+
+Para ejecutar y verificar el backend, sigue [backend/README.md](backend/README.md). Su configuración se guarda en `backend/.env` y es independiente de la configuración Flutter.
 
 `lib/config/app_config.dart` lee `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `API_BASE_URL` mediante `String.fromEnvironment`. Los valores se pasan con `--dart-define-from-file`.
 
