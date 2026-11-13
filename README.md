@@ -2,13 +2,13 @@
 
 Aplicación móvil de Fondea, construida con Flutter. Este repositorio contiene el punto de partida del cliente móvil, un backend Node.js con TypeScript, la configuración por entorno y la documentación de producto y arquitectura.
 
-> **Estado:** base inicial. La pantalla Flutter es de bienvenida. El backend incluye `/health`, autenticación Supabase y `/api/v1/me`; los flujos y endpoints de negocio están pendientes.
+> **Estado:** base inicial. La pantalla Flutter es de bienvenida. El backend incluye `/health`, autenticación Supabase, `/api/v1/me` y las migraciones T04 de esquema, RLS y parámetros; los flujos y endpoints de negocio están pendientes.
 
 ## Contenido
 
 - `lib/`: aplicación Flutter y lectura de configuración de compilación.
 - `config/env/`: plantillas de configuración para desarrollo y producción.
-- `backend/`: servicio Express/TypeScript, integración Supabase y Stellar testnet, pruebas y SQL técnico. Consulta su [guía de inicio](backend/README.md).
+- `backend/`: servicio Express/TypeScript, integración Supabase y Stellar testnet, esquema T04 y pruebas de base de datos. Consulta su [guía de inicio](backend/README.md).
 - `docs/sdd/`: proceso y plantillas de Specification-Driven Development.
 - `pubspec.yaml`: dependencias y configuración del paquete Flutter.
 

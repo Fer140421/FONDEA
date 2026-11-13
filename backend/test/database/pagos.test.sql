@@ -1,0 +1,25 @@
+select extensions.no_plan();
+select pg_temp.financiar();
+insert into public.cuotas(id,prestamo_id,numero,fecha_vencimiento,monto,comision) values
+ ('00000000-0000-4000-8000-000000000501','00000000-0000-4000-8000-000000000101',1,((now() at time zone 'America/La_Paz')::date+interval '1 month')::date,172.50,1.73);
+set local request.jwt.claims='{"sub":"00000000-0000-4000-8000-000000000001","role":"authenticated"}'; set local role authenticated;
+with cambios as (update public.cuotas set estado='pagada',pagada_en=now(),tx_hash=repeat('c',64) returning *) select extensions.is((select count(*)::int from cambios),0,'El cliente no declara un pago confirmado');
+reset role;
+set constraints all deferred;
+update public.cuotas set estado='pagada',pagada_en=now(),tx_hash=repeat('c',64) where id='00000000-0000-4000-8000-000000000501';
+select extensions.throws_like($$insert into public.repartos(cuota_id,aporte_id,monto,tx_hash) select '00000000-0000-4000-8000-000000000501',id,170.77,repeat('c',64) from public.aportes where prestamista_id='00000000-0000-4000-8000-000000000011'$$,'%proporcional%','Un solo prestamista no recibe todo el neto');
+select extensions.throws_like($$insert into public.repartos(cuota_id,aporte_id,monto,tx_hash) select '00000000-0000-4000-8000-000000000501',id,85.39,repeat('d',64) from public.aportes where prestamista_id='00000000-0000-4000-8000-000000000011'$$,'%sin confirmar%','Hash de reparto debe coincidir con la cuota');
+select extensions.lives_ok($$insert into public.repartos(cuota_id,aporte_id,monto,tx_hash) select '00000000-0000-4000-8000-000000000501',id,case when prestamista_id='00000000-0000-4000-8000-000000000011' then 85.39 else 85.38 end,repeat('c',64) from public.aportes$$,'Reparto proporcional conserva los centavos');
+set constraints all immediate;
+select extensions.is((select sum(monto)::numeric from public.repartos),170.77::numeric,'Se reparte exactamente cuota menos comisión');
+select extensions.throws_like($$update public.repartos set monto=0$$,'%solo inserción%','Un reparto confirmado no se modifica');
+set local request.jwt.claims='{"sub":"00000000-0000-4000-8000-000000000011","role":"authenticated"}'; set local role authenticated;
+select extensions.is((select count(*)::int from public.repartos),1,'Prestamista ve su propio reparto');
+reset role;
+set local request.jwt.claims='{"sub":"00000000-0000-4000-8000-000000000001","role":"authenticated"}'; set local role authenticated;
+select extensions.is((select count(*)::int from public.repartos),0,'Emprendedor no ve repartos individuales');
+select extensions.is((select total_repartido::numeric from public.resumen_repartos where cuota_id='00000000-0000-4000-8000-000000000501'),170.77::numeric,'Emprendedor consulta el total repartido');
+reset role;
+update public.usuarios set estado_verificacion='pendiente' where id='00000000-0000-4000-8000-000000000001';
+select extensions.lives_ok($$insert into public.cuotas(prestamo_id,numero,fecha_vencimiento,monto,comision) values('00000000-0000-4000-8000-000000000101',2,((now() at time zone 'America/La_Paz')::date+interval '2 months')::date,172.50,1.73)$$,'Una nueva revisión de identidad no impide registrar obligaciones existentes');
+select * from extensions.finish();

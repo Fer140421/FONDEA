@@ -1,0 +1,25 @@
+select extensions.plan(12);
+select pg_temp.financiar();
+insert into public.evidencias(id,etapa_id,intento,descripcion,archivos,hash) values
+ ('00000000-0000-4000-8000-000000000401','00000000-0000-4000-8000-000000000301',1,'Compré las herramientas descritas en la etapa.',array['00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-000000000301/foto.jpg'],repeat('b',64));
+select extensions.throws_like($$insert into public.evidencias(etapa_id,intento,descripcion,archivos,hash) values('00000000-0000-4000-8000-000000000301',2,'Corrección antes de tener un rechazo.',array['00000000-0000-4000-8000-000000000001/00000000-0000-4000-8000-000000000301/otra.jpg'],repeat('c',64))$$,'%primer rechazo%','Segundo intento exige primer rechazo');
+set local request.jwt.claims='{"sub":"00000000-0000-4000-8000-000000000011","role":"authenticated"}'; set local role authenticated;
+select extensions.is((select count(*)::int from public.evidencias),1,'Aportante consulta evidencia');
+select extensions.throws_like($$insert into public.votos(evidencia_id,decision) values('00000000-0000-4000-8000-000000000401','rechaza')$$,'%check constraint%','Rechazo requiere justificación');
+select extensions.lives_ok($$insert into public.votos(evidencia_id,decision,justificacion) values('00000000-0000-4000-8000-000000000401','rechaza','La foto no permite verificar la herramienta.')$$,'Aportante puede votar con justificación');
+select extensions.throws_like($$insert into public.votos(evidencia_id,decision) values('00000000-0000-4000-8000-000000000401','aprueba')$$,'%votos_evidencia_id_prestamista_id_key%','Un solo voto por evidencia');
+with cambios as (update public.evidencias set estado='aprobada' where id='00000000-0000-4000-8000-000000000401' returning *) select extensions.is((select count(*)::int from cambios),0,'Prestamista no aprueba una evidencia por UPDATE');
+reset role;
+set local request.jwt.claims='{"sub":"00000000-0000-4000-8000-000000000012","role":"authenticated"}'; set local role authenticated;
+select extensions.is((select count(*)::int from public.votos),0,'Otro prestamista no ve el voto individual');
+select extensions.is((select rechazos::int from public.resumen_votacion where evidencia_id='00000000-0000-4000-8000-000000000401'),1,'Otro participante ve el resultado agregado');
+reset role;
+set local request.jwt.claims='{"sub":"00000000-0000-4000-8000-000000000001","role":"authenticated"}'; set local role authenticated;
+select extensions.is((select count(*)::int from public.votos where justificacion is not null),1,'Emprendedor consulta la justificación del rechazo');
+reset role;
+set local request.jwt.claims='{"sub":"00000000-0000-4000-8000-000000000013","role":"authenticated"}'; set local role authenticated;
+select extensions.is((select count(*)::int from public.evidencias),0,'Extraño no ve evidencias');
+select extensions.throws_like($$insert into public.votos(evidencia_id,decision) values('00000000-0000-4000-8000-000000000401','aprueba')$$,'%no habilitado%','Extraño no vota');
+reset role;
+select extensions.throws_like($$delete from public.votos$$,'%inmutables%','Los votos forman parte del historial');
+select * from extensions.finish();

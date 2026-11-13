@@ -1,0 +1,12 @@
+select extensions.plan(8);
+select pg_temp.financiar();
+select extensions.ok((select primer_desembolso_en is not null from public.prestamos where id='00000000-0000-4000-8000-000000000101'),'Primer desembolso registrado por separado');
+update public.prestamos set estado='cancelado' where id='00000000-0000-4000-8000-000000000101';
+select extensions.ok((select bloquea_nueva_solicitud from public.prestamos where id='00000000-0000-4000-8000-000000000101'),'Cancelar con desembolso mantiene el bloqueo');
+select extensions.throws_like($$insert into public.prestamos(negocio_id) values('00000000-0000-4000-8000-000000000201')$$,'%prestamos_una_solicitud_abierta%','No se inicia otro préstamo con deuda');
+select extensions.throws_like($$insert into public.cuotas(prestamo_id,numero,fecha_vencimiento,monto,comision) values('00000000-0000-4000-8000-000000000101',7,current_date,100,1)$$,'%número inválido%','Número de cuota dentro del plan');
+select extensions.throws_like($$insert into public.cuotas(prestamo_id,numero,fecha_vencimiento,monto,comision) values('00000000-0000-4000-8000-000000000101',1,current_date,172.50,0)$$,'%comisión%','Comisión de cuota usa el porcentaje pactado');
+select extensions.throws_like($$insert into public.cuotas(prestamo_id,numero,fecha_vencimiento,monto,comision) values('00000000-0000-4000-8000-000000000101',1,current_date,172.50,1.73)$$,'%Vencimiento%','La cuota no vence antes de iniciar su plazo');
+select extensions.throws_like($$update public.prestamos set estado='pagado' where id='00000000-0000-4000-8000-000000000101'$$,'%conserva deuda%','No se declara pagado mientras falta el cronograma');
+select extensions.throws_like($$delete from public.etapas where prestamo_id='00000000-0000-4000-8000-000000000101'$$,'%historial%','Etapas desembolsadas no se borran');
+select * from extensions.finish();
