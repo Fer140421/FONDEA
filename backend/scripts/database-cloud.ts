@@ -20,8 +20,12 @@ async function main() {
   const index = process.argv.indexOf('--url-file');
   const path = index >= 0 ? process.argv[index + 1] : undefined;
   if (!path || !process.env.SUPABASE_URL) throw new Error('Falta archivo de conexión o SUPABASE_URL.');
+  const caIndex = process.argv.indexOf('--ca-file');
+  const caPath = caIndex >= 0 ? process.argv[caIndex + 1] : undefined;
+  if (caIndex >= 0 && (!caPath || caPath.startsWith('--'))) throw new Error('Falta archivo del certificado CA.');
+  const ca = caPath ? readFileSync(caPath, 'utf8') : undefined;
   const connectionString = cloudConnectionString(readFileSync(path, 'utf8').trim(), process.env.SUPABASE_URL);
-  const client = new pg.Client({ connectionString, ssl: { rejectUnauthorized: true }, connectionTimeoutMillis: 15_000, query_timeout: 60_000 });
+  const client = new pg.Client({ connectionString, ssl: { rejectUnauthorized: true, ...(ca ? { ca } : {}) }, connectionTimeoutMillis: 15_000, query_timeout: 60_000 });
   let currentMigration = 'conexión y comprobación del proyecto';
   try {
     await client.connect();
@@ -60,7 +64,7 @@ async function main() {
 }
 if (process.argv[1]?.endsWith('database-cloud.ts')) {
   main().catch(() => {
-    console.error('No se pudo preparar la conexión. Revisa --url-file y el proyecto de .env.');
+    console.error('No se pudo preparar la conexión. Revisa --url-file, --ca-file y el proyecto de .env.');
     process.exitCode = 1;
   });
 }

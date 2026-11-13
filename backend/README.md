@@ -173,10 +173,12 @@ El reset elimina los volúmenes del proyecto Compose de pruebas. `npm run db:sto
 El ejecutor remoto requiere una conexión PostgreSQL con permisos de migración del mismo proyecto indicado en `SUPABASE_URL`. La clave publicable de la API no permite ejecutar DDL. Obtén la conexión directa o **Session pooler**, puerto 5432, desde **Connect** en el dashboard; conserva el valor en un archivo local privado fuera de Git.
 
 ```bash
-npm run db:migrate:cloud -- --url-file /ruta/privada/conexion-postgres.txt
+npm run db:migrate:cloud -- --url-file /ruta/privada/conexion-postgres.txt --ca-file /ruta/prod-ca-2021.crt
 ```
 
 El script lee la conexión desde el archivo, valida que corresponda al proyecto configurado y utiliza TLS con verificación del certificado. No imprime la conexión ni la pasa como argumento a otro proceso. No necesita guardar una contraseña PostgreSQL en `.env`.
+
+Descarga el certificado CA desde **Database Settings → SSL Configuration** en Supabase y pásalo con `--ca-file`. Es un certificado público, distinto de las credenciales de conexión. La opción es necesaria cuando Node no reconoce la CA de Supabase; sin ella se conserva la verificación con las autoridades del sistema. Consulta la [documentación oficial de SSL](https://supabase.com/docs/guides/platform/ssl-enforcement). No desactives la verificación TLS para resolver errores de certificado.
 
 Cada archivo y su registro de versión se aplican en una misma transacción. `supabase_migrations.schema_migrations` conserva las versiones aplicadas; una nueva ejecución omite esas versiones. El ejecutor aborta si encuentra versiones remotas que no existen en el repositorio. Si falla una migración, las anteriores permanecen registradas y la fallida se revierte. No edites migraciones que ya se hayan aplicado a un entorno compartido: crea otra versión.
 
