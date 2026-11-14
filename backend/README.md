@@ -2,6 +2,8 @@
 
 Base Node.js con Express 5 y TypeScript estricto. Incluye Supabase Database/Auth/Storage, autenticación mediante Bearer token y Stellar testnet.
 
+T04 incorpora las quince tablas del dominio, parámetros, restricciones, permisos y políticas de archivos. Su [contrato de acceso](../docs/sdd/design/T04-acceso-datos.md) identifica las vistas y operaciones que deben usar los futuros endpoints.
+
 ## Ejecutar
 
 Requiere Node.js 24 o superior y npm. `.nvmrc` selecciona Node 24.
@@ -127,3 +129,63 @@ npm test
 ```
 
 Las pruebas usan JWT firmados con claves EC generadas localmente y simulan las respuestas externas. Cubren tokens válidos, firmas falsas, expiración, emisor/audiencia/sujeto incorrectos, caída de Auth, protección de módulos y aislamiento de los clientes Supabase entre usuarios. No requieren credenciales ni acceso a Supabase y no sustituyen al script de integración real.
+
+## Base de datos T04
+
+Las migraciones están en `supabase/migrations`, ordenadas por versión:
+
+- `202611120001_backend_checks.sql`: recursos técnicos de T03.
+- `202611130001_esquema.sql`: dominios, enums, quince tablas, índices y cierre inicial de acceso.
+- `202611130002_integridad_y_acceso.sql`: restricciones cruzadas, guardas de escritura, RLS y proyecciones de lectura.
+- `202611130003_parametros_y_storage.sql`: parámetros y buckets privados con sus políticas.
+
+Los importes se guardan en Bs con dos decimales. Las tasas porcentuales se almacenan como `7`, `2`, `1` y `50`. El préstamo conserva las condiciones vigentes al publicar; un cambio de parámetros afecta a publicaciones posteriores. Los endpoints y la comprobación de las transacciones Stellar se implementan en sus tickets.
+
+Para el mercado usa `mercado_prestamos` y `mercado_etapas`, y para el perfil visible `perfiles_publicos`. Las tablas base contienen expedientes privados. `resumen_financiamiento`, `resumen_votacion`, `resumen_repartos` e `historial_prestamo` ofrecen las proyecciones agregadas y el historial sin detalles personales. Consulta la [matriz de acceso](../docs/sdd/design/T04-acceso-datos.md) antes de incorporar nuevas consultas.
+
+### Probar el esquema y RLS
+
+Requiere Docker con Compose y el motor en ejecución. Este entorno usa imágenes oficiales de PostgreSQL, Auth, PostgREST y Storage de Supabase. Los servicios aplican sus propias migraciones internas antes de las del proyecto.
+
+```bash
+cd backend
+npm ci
+npm run db:start
+npm run db:migrate:local
+npm run test:db
+```
+
+Las consultas de prueba se ejecutan con `psql` dentro de `fondea-db-test`: no requieren un cliente SQL instalado, puertos publicados ni montajes de carpetas del host. Esto también permite usarlas con Docker Desktop VMM desde WSL. La base local está separada de `.env` y del proyecto alojado; las credenciales conocidas del Compose solo sirven para este entorno desechable.
+
+Las suites pgTAP ejecutan consultas e intentos de escritura como anónimo, usuarios distintos, administrador y soporte. Cada suite revierte sus fixtures. Las dos pruebas de concurrencia necesitan la base local sin perfiles: crean datos ficticios, comprueban transacciones paralelas y los retiran al terminar. El entorno se reserva para estas pruebas, no para datos de la aplicación.
+
+Para reconstruir desde cero **solo la base de pruebas local**:
+
+```bash
+npm run db:reset:local
+npm run test:db
+```
+
+El reset elimina los volúmenes del proyecto Compose de pruebas. `npm run db:stop` retira sus contenedores conservando el volumen. Ninguno de estos comandos acepta una URL de base remota.
+
+### Aplicar al proyecto Supabase de desarrollo
+
+El ejecutor remoto requiere una conexión PostgreSQL con permisos de migración del mismo proyecto indicado en `SUPABASE_URL`. La clave publicable de la API no permite ejecutar DDL. Obtén la conexión directa o **Session pooler**, puerto 5432, desde **Connect** en el dashboard; conserva el valor en un archivo local privado fuera de Git.
+
+```bash
+npm run db:migrate:cloud -- --url-file /ruta/privada/conexion-postgres.txt --ca-file /ruta/prod-ca-2021.crt
+```
+
+El script lee la conexión desde el archivo, valida que corresponda al proyecto configurado y utiliza TLS con verificación del certificado. No imprime la conexión ni la pasa como argumento a otro proceso. No necesita guardar una contraseña PostgreSQL en `.env`.
+
+Descarga el certificado CA desde **Database Settings → SSL Configuration** en Supabase y pásalo con `--ca-file`. Es un certificado público, distinto de las credenciales de conexión. La opción es necesaria cuando Node no reconoce la CA de Supabase; sin ella se conserva la verificación con las autoridades del sistema. Consulta la [documentación oficial de SSL](https://supabase.com/docs/guides/platform/ssl-enforcement). No desactives la verificación TLS para resolver errores de certificado.
+
+Cada archivo y su registro de versión se aplican en una misma transacción. `supabase_migrations.schema_migrations` conserva las versiones aplicadas; una nueva ejecución omite esas versiones. El ejecutor aborta si encuentra versiones remotas que no existen en el repositorio. Si falla una migración, las anteriores permanecen registradas y la fallida se revierte. No edites migraciones que ya se hayan aplicado a un entorno compartido: crea otra versión.
+
+El estado final verifica las quince tablas con RLS. Las pruebas completas de permisos se ejecutan en el entorno local; aplicar el esquema no equivale a probar transferencias de Stellar.
+
+### Operadores y archivos
+
+El alta normal solo permite `emprendedor` y `prestamista`. Los perfiles `admin` y `soporte` los asigna Fondea mediante una sesión administrativa de Supabase. Soporte puede consultar expedientes y registrar intervenciones; las aprobaciones, parámetros y registros de dinero se reservan a administración y operaciones verificadas. El cliente Supabase por usuario de T03 conserva sus permisos y no se transforma en un cliente administrativo.
+
+Los buckets `identidad`, `negocios` y `evidencias` son privados. Guarda rutas, no URLs públicas ni enlaces firmados permanentes. La subida, lectura y limpieza de cargas se autorizan según su propietario, referencia y estado del préstamo. No se sobrescriben archivos registrados. Los documentos vigentes y las reglas de cada campo se encuentran en el [diccionario actualizado](../docs/Fondea%20-%20Especificacion%20de%20Requerimientos.md).

@@ -1,0 +1,15 @@
+select extensions.plan(8);
+insert into public.notificaciones(usuario_id,tipo,mensaje) values ('00000000-0000-4000-8000-000000000011','solicitud','Aviso personal de prueba');
+set local request.jwt.claims='{"sub":"00000000-0000-4000-8000-000000000011","role":"authenticated"}'; set local role authenticated;
+select extensions.is((select count(*)::int from public.notificaciones),1,'Destinatario consulta su aviso');
+select extensions.lives_ok('update public.notificaciones set leida=true','El destinatario marca como leído');
+select extensions.throws_like($$update public.notificaciones set mensaje='Falso pago registrado'$$,'%marcar un aviso%','El destinatario no altera el contenido');
+select extensions.lives_ok($$insert into public.dispositivos(fcm_token,plataforma) values('fcm-falso-usuario11','android')$$,'Registro de dispositivo propio');
+select extensions.throws_like($$update public.dispositivos set usuario_id='00000000-0000-4000-8000-000000000012'$$,'%inmutable%','No se transfiere la propiedad del dispositivo');
+reset role;
+set local request.jwt.claims='{"sub":"00000000-0000-4000-8000-000000000012","role":"authenticated"}'; set local role authenticated;
+select extensions.is((select count(*)::int from public.notificaciones),0,'Otro usuario no consulta avisos ajenos');
+select extensions.is((select count(*)::int from public.dispositivos),0,'Otro usuario no consulta tokens FCM ajenos');
+select extensions.throws_like($$insert into public.dispositivos(usuario_id,fcm_token,plataforma) values('00000000-0000-4000-8000-000000000011','fcm-falso','web')$$,'%row-level security%','No se crea un dispositivo para otra persona');
+reset role;
+select * from extensions.finish();

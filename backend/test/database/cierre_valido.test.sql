@@ -1,0 +1,16 @@
+select extensions.plan(5);
+select pg_temp.aportar(11,300,'1'); select pg_temp.aportar(12,300,'2');
+set constraints all deferred;
+update public.etapas set monto=case numero when 1 then 180 else 420 end where prestamo_id='00000000-0000-4000-8000-000000000101';
+update public.prestamos set monto=600,estado='financiado' where id='00000000-0000-4000-8000-000000000101';
+set constraints all immediate;
+select extensions.is((select estado::text from public.prestamos where id='00000000-0000-4000-8000-000000000101'),'financiado','Cierre parcial equilibrado aceptado');
+select extensions.is((select sum(porcentaje)::numeric from public.aportes where prestamo_id='00000000-0000-4000-8000-000000000101'),100::numeric,'Participaciones recalculadas sobre Bs600');
+set local request.jwt.claims='{"sub":"00000000-0000-4000-8000-000000000013","role":"authenticated"}'; set local role authenticated;
+select extensions.is((select count(*)::int from public.mercado_prestamos),0,'La ficha sale del mercado al financiarse');
+select extensions.is((select count(*)::int from public.prestamos),0,'Extraño no accede al expediente cerrado');
+reset role;
+set local request.jwt.claims='{"sub":"00000000-0000-4000-8000-000000000011","role":"authenticated"}'; set local role authenticated;
+select extensions.is((select count(*)::int from public.prestamos),1,'El participante conserva su historial privado');
+reset role;
+select * from extensions.finish();

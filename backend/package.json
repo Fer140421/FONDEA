@@ -12,7 +12,13 @@
     "start": "node --env-file-if-exists=.env dist/server.js",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
-    "verify:integration": "node --env-file-if-exists=.env --import tsx scripts/verify-integration.ts"
+    "verify:integration": "node --env-file-if-exists=.env --import tsx scripts/verify-integration.ts",
+    "db:start": "node --import tsx scripts/database-local.ts start",
+    "db:stop": "docker compose -f compose.database.yml down",
+    "db:reset:local": "docker compose -f compose.database.yml down --volumes && npm run db:start && npm run db:migrate:local",
+    "test:db": "node --import tsx --test test/database/database.test.ts",
+    "db:migrate:local": "node --import tsx scripts/database-local.ts migrate",
+    "db:migrate:cloud": "node --env-file-if-exists=.env --import tsx scripts/database-cloud.ts"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^17.4.0",
@@ -26,7 +32,9 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^24.19.2",
+    "@types/pg": "^8.23.1",
     "@types/supertest": "^7.2.1",
+    "pg": "^8.23.1",
     "supertest": "^7.3.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
