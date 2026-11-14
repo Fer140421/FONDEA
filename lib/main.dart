@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:fondea/design_system/fondea_colors.dart';
+import 'package:fondea/design_system/fondea_spacing.dart';
+import 'package:fondea/design_system/fondea_theme.dart';
 
 void main() {
   runApp(const FondeaApp());
@@ -12,10 +15,7 @@ class FondeaApp extends StatelessWidget {
     return MaterialApp(
       title: 'Fondea',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF176B5B)),
-        useMaterial3: true,
-      ),
+      theme: FondeaTheme.light,
       home: const _WelcomePage(),
     );
   }
@@ -30,21 +30,21 @@ class _WelcomePage extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(FondeaSpacing.xl),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   Icons.account_balance_rounded,
                   size: 56,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: FondeaColors.primary,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: FondeaSpacing.md),
                 Text(
                   'Fondea',
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: FondeaSpacing.xs),
                 Text(
                   'La base de tu próximo proyecto empieza aquí.',
                   textAlign: TextAlign.center,

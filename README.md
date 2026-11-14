@@ -7,6 +7,7 @@ Aplicación móvil de Fondea, construida con Flutter. Este repositorio contiene 
 ## Contenido
 
 - `lib/`: aplicación Flutter y lectura de configuración de compilación.
+- `lib/design_system/`: tema, tokens y controles compartidos derivados del kit UI de Figma. Consulta la [guía visual](docs/sdd/design/sistema-visual-flutter.md).
 - `config/env/`: plantillas de configuración para desarrollo y producción.
 - `backend/`: servicio Express/TypeScript, integración Supabase y Stellar testnet, esquema T04 y pruebas de base de datos. Consulta su [guía de inicio](backend/README.md).
 - `docs/sdd/`: proceso y plantillas de Specification-Driven Development.
